@@ -1,4 +1,4 @@
-# ArduEasyBlockscompiler&flash tool
+# ArduEasyBlocks compiler&flash tool
 Simple tool to compile and upload from ArduEasyBlocks to Arduino boards.
 
 ArduEasyBlocks: https://znow-o-kablach.pl/ardueasyblocks/.
