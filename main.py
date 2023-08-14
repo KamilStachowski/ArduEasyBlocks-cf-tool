@@ -245,8 +245,8 @@ def compiler_loop():
                 else:
                     # flashing
                     _run_upload = f"\"{_avrdude_path}/avrdude\" -C\"{_avrdude_conf_path}\" -v -patmega328p " \
-                                  f"-carduino -P\"{selected_port.get()}\" -b115200 -D " \
-                                  f"-Uflash:w:\"{_temp_folder_path}/build/temp.ino.with_bootloader.hex\":i"
+                                  f"-carduino -P{selected_port.get()} -b115200 -D " \
+                                  f"-Uflash:w:{_temp_folder_path}/build/temp.ino.hex:i"
 
                     log_textbox.insert(END, _run_upload + "\n")
                     log_textbox.see(END)
@@ -392,9 +392,10 @@ def save_to_file():
     datafile = asksaveasfile(initialfile='ardueasyblocks_compiler_log.txt',
                              defaultextension=".csv",
                              filetypes=[("Text Documents", "*.txt")])
-    if datafile is not None:
-        datafile.write(log_textbox.get('1.0', END))
-        datafile.close()
+    if datafile:
+        file = open(datafile, 'w')
+        file.write(log_textbox.get('1.0', END))
+        file.close()
 
 
 def update_response_buff_indi():
@@ -448,7 +449,7 @@ def unlock_port():
 
 
 gui = Tk()
-gui.title("ArduEasyBlocks compiler&flash tool v1.0.0")
+gui.title("ArduEasyBlocks compiler&flash tool v1.0.1")
 gui.geometry("520x400")
 gui.resizable(False, False)
 gui.iconbitmap(resource_path("icon.ico"))
@@ -510,7 +511,7 @@ clear_log_btn.place(x=305, y=52, width=80, height=20)
 save_log_btn = Button(gui, text="Zapisz log", fg="#1f75de", command=lambda: save_to_file())
 save_log_btn.place(x=305, y=77, width=80, height=20)
 
-img_bg = PhotoImage(file=resource_path("image2.png"))
+img_bg = PhotoImage(file=resource_path("image.png"))
 Label(gui, image=img_bg).place(x=400, y=0)
 
 # compiler thread
