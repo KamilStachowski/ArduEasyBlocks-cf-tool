@@ -177,6 +177,8 @@ def compiler_loop():
     global run_compiler, window_exited, server_status_table
     global _arduino_builder_path, _arduino_lib_path, _avrdude_path, _avrdude_conf_path
 
+
+
     while not window_exited:
         if run_compiler:
             server_status_table.append("compilation:started")
@@ -188,13 +190,18 @@ def compiler_loop():
             if not os.path.exists(_temp_folder_path + "/build"):
                 os.mkdir(_temp_folder_path + "/build")
 
+            mcu = "atmega328"
+
+            if selected_mcu.get() == "ATmega168":
+                mcu = "atmega168"
+
             _run_cmd_comp = f"\"{_arduino_builder_path}/arduino-builder\" -compile -logger=machine" \
                             f" -hardware \"{_arduino_builder_path}/hardware\" " \
                             f"-tools \"{_arduino_builder_path}/tools-builder\" " \
                             f"-tools \"{_arduino_builder_path}/hardware/tools/avr\" " \
                             f"-built-in-libraries \"{_arduino_builder_path}/libraries\" " \
                             f"-libraries \"{_arduino_lib_path}\" " \
-                            f"-fqbn=arduino:avr:nano:cpu=atmega328 -vid-pid=0000_0000 -ide-version=10815 " \
+                            f"-fqbn=arduino:avr:nano:cpu={mcu} -vid-pid=0000_0000 -ide-version=10815 " \
                             f"-build-path \"{_temp_folder_path}/build\" " \
                             f"-warnings=none -build-cache \"{_temp_folder_path}/cache\" " \
                             f"-verbose \"{_temp_folder_path}/temp.ino\""
@@ -244,8 +251,16 @@ def compiler_loop():
                     log_textbox.see(END)
                 else:
                     # flashing
-                    _run_upload = f"\"{_avrdude_path}/avrdude\" -C\"{_avrdude_conf_path}\" -v -patmega328p " \
-                                  f"-carduino -P{selected_port.get()} -b115200 -D " \
+
+                    upload_baud_rate = 115200
+                    mcu = "atmega328p"
+
+                    if selected_mcu.get() == "ATmega168":
+                        upload_baud_rate = 19200
+                        mcu = "atmega168"
+
+                    _run_upload = f"\"{_avrdude_path}/avrdude\" -C\"{_avrdude_conf_path}\" -v -p{mcu} " \
+                                  f"-carduino -P{selected_port.get()} -b{upload_baud_rate} -D " \
                                   f"-Uflash:w:{_temp_folder_path}/build/temp.ino.hex:i"
 
                     log_textbox.insert(END, _run_upload + "\n")
@@ -308,8 +323,10 @@ def compiler_status_indicator_set(mode):
 # server http
 class S(BaseHTTPRequestHandler):
     def _set_response(self):
-        self.send_response(200)
+        # self.send_response(200)
+        self.send_response(200, "HTTP/1.1 200 OK")
         self.send_header('Access-Control-Allow-Origin', '*')
+
         self.send_header('Content-type', 'application/json')
         self.end_headers()
 
@@ -432,6 +449,7 @@ def lock_port():
     connect_btn["state"] = "disable"
     disconnect_btn["state"] = "normal"
     com_port_selector["state"] = "disable"
+    mcu_selector["state"] = "disable"
     refresh_ser_ports_btn["state"] = "disable"
     serial_port_locked = True
 
@@ -444,12 +462,13 @@ def unlock_port():
         connect_btn["state"] = "normal"
         disconnect_btn["state"] = "disable"
         com_port_selector["state"] = "normal"
+        mcu_selector["state"] = "normal"
         refresh_ser_ports_btn["state"] = "normal"
         serial_port_locked = False
 
 
 gui = Tk()
-gui.title("ArduEasyBlocks compiler&flash tool v1.0.1")
+gui.title("ArduEasyBlocks compiler&flash tool v1.1.0")
 gui.geometry("520x400")
 gui.resizable(False, False)
 gui.iconbitmap(resource_path("icon.ico"))
@@ -462,13 +481,23 @@ selected_port.set(com_ports[0])
 
 com_port_selector = OptionMenu(gui, selected_port, *com_ports)
 com_port_selector.place(x=10, y=24, width=150)
+
 refresh_ser_ports_btn = Button(gui, text="Refresh", command=lambda: refresh_serials_port())
 refresh_ser_ports_btn.place(x=97, y=5, width=60, height=18)
 
-connect_btn = Button(gui, text="Wybierz port", fg="#00dd00", command=lambda: lock_port())
-connect_btn.place(x=170, y=5, width=100, height=20)
-disconnect_btn = Button(gui, text="Zmień port", fg="#dd0000", command=lambda: unlock_port())
-disconnect_btn.place(x=170, y=30, width=100, height=20)
+# mcu select
+mcu_list = ["ATmega328P", "ATmega168"]
+selected_mcu = StringVar(gui)
+selected_mcu.set(mcu_list[0])
+
+Label(gui, text="Mikrokontroler:", justify=LEFT).place(x=162, y=5)
+mcu_selector = OptionMenu(gui, selected_mcu, *mcu_list)
+mcu_selector.place(x=160, y=24, width=120)
+
+connect_btn = Button(gui, text="Wybierz", fg="#00dd00", command=lambda: lock_port())
+connect_btn.place(x=285, y=5, width=50, height=20)
+disconnect_btn = Button(gui, text="Zmień", fg="#dd0000", command=lambda: unlock_port())
+disconnect_btn.place(x=285, y=30, width=50, height=20)
 disconnect_btn["state"] = "disable"
 
 # link to ardueasyblocks
