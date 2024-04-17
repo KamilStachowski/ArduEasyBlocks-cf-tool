@@ -15,10 +15,10 @@ import configparser
 import webbrowser
 
 # windowed
-import io
-stream = io.StringIO()
-sys.stdout = stream
-sys.stderr = stream
+# import io
+# stream = io.StringIO()
+# sys.stdout = stream
+# sys.stderr = stream
 
 
 # DEFAULT PATHS
@@ -194,6 +194,8 @@ def compiler_loop():
 
             if selected_mcu.get() == "ATmega168":
                 mcu = "atmega168"
+            elif selected_mcu.get() == "ATmega328P Old bootloader":
+                mcu = "atmega328old -vid-pid=0000_0000"
 
             _run_cmd_comp = f"\"{_arduino_builder_path}/arduino-builder\" -compile -logger=machine" \
                             f" -hardware \"{_arduino_builder_path}/hardware\" " \
@@ -258,6 +260,9 @@ def compiler_loop():
                     if selected_mcu.get() == "ATmega168":
                         upload_baud_rate = 19200
                         mcu = "atmega168"
+                    elif selected_mcu.get() == "ATmega328P Old bootloader":
+                        upload_baud_rate = 57600
+                        mcu = "atmega328p"
 
                     _run_upload = f"\"{_avrdude_path}/avrdude\" -C\"{_avrdude_conf_path}\" -v -p{mcu} " \
                                   f"-carduino -P{selected_port.get()} -b{upload_baud_rate} -D " \
@@ -326,7 +331,6 @@ class S(BaseHTTPRequestHandler):
         # self.send_response(200)
         self.send_response(200, "HTTP/1.1 200 OK")
         self.send_header('Access-Control-Allow-Origin', '*')
-
         self.send_header('Content-type', 'application/json')
         self.end_headers()
 
@@ -362,6 +366,7 @@ class S(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": _status}).encode('utf-8'))
         else:
             self.wfile.write(json.dumps({"error": "unknown_command"}).encode('utf-8'))
+        self.connection.shutdown(0)
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
@@ -384,9 +389,10 @@ class S(BaseHTTPRequestHandler):
         self._set_response()
         self.wfile.write(json.dumps({"status": _status}).encode('utf-8'))
 
+        self.connection.shutdown(0)
+
 
 httpd = None
-
 
 def http_server_loop(server_class=HTTPServer, handler_class=S, port=8080):
     global window_exited, httpd
@@ -468,7 +474,7 @@ def unlock_port():
 
 
 gui = Tk()
-gui.title("ArduEasyBlocks compiler&flash tool v1.1.0")
+gui.title("ArduEasyBlocks compiler&flash tool v1.1.1")
 gui.geometry("520x400")
 gui.resizable(False, False)
 gui.iconbitmap(resource_path("icon.ico"))
@@ -486,7 +492,7 @@ refresh_ser_ports_btn = Button(gui, text="Refresh", command=lambda: refresh_seri
 refresh_ser_ports_btn.place(x=97, y=5, width=60, height=18)
 
 # mcu select
-mcu_list = ["ATmega328P", "ATmega168"]
+mcu_list = ["ATmega328P", "ATmega168", "ATmega328P Old bootloader"]
 selected_mcu = StringVar(gui)
 selected_mcu.set(mcu_list[0])
 
