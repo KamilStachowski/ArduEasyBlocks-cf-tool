@@ -15,10 +15,10 @@ import configparser
 import webbrowser
 
 # windowed
-# import io
-# stream = io.StringIO()
-# sys.stdout = stream
-# sys.stderr = stream
+import io
+stream = io.StringIO()
+sys.stdout = stream
+sys.stderr = stream
 
 
 # DEFAULT PATHS
